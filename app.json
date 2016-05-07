@@ -1,0 +1,7 @@
+{
+  "name": "Road Sensor Netowork Database",
+  "description": "Backend for logging environmental conditions near roads",
+  "image": "heroku/python",
+  "keywords": ["python", "flask" ],
+  "addons": [ "heroku-postgresql" ]
+}
