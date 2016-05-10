@@ -1,1 +1,1 @@
-web: python rs-db.py
+web: python rs_db.py
