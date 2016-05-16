@@ -22,7 +22,7 @@ SENSOR_VALUE = "value"
 
 @app.route("/")
 def hello():
-    return "Hello World!"
+    return "Welcome to the road sensor network database."
 
 @app.route("/echo/<text>")
 def echo(text):
@@ -37,6 +37,8 @@ def dumper(obj):
 @app.route("/retrieve")
 def retrieve():
     sensorid = request.args.get("sensorid")
+    if (sensorid != None):
+        sensorid = int(sensorid.replace(':',''), 16)
     starttime = request.args.get("starttime")
     endtime = request.args.get("endtime")
 
@@ -92,5 +94,5 @@ def insert():
         return "Unsupported Media Type", 415
 
 if __name__ == "__main__":
-    #app.debug = True
+#    app.debug = True
     app.run(host='0.0.0.0', port=int(os.environ['PORT']))

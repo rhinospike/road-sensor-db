@@ -1,3 +1,4 @@
+import sys
 from flask.ext.sqlalchemy import SQLAlchemy
 from flask import json
 from sqlalchemy.dialects.postgresql import JSON
@@ -8,7 +9,7 @@ db = SQLAlchemy()
 class SensorReading(db.Model):
     __tablename__ = "sensors"
 
-    sensorid = db.Column(db.Integer, primary_key=True)
+    sensorid = db.Column(db.BigInteger, primary_key=True)
     timestamp = db.Column(db.DateTime, primary_key=True)
     gas = db.Column(db.Float)
     dust = db.Column(db.Float)
@@ -19,7 +20,8 @@ class SensorReading(db.Model):
         )
 
     def __init__(self, sensorid, timestamp, gas=None, dust=None, noise=None):
-        self.sensorid = sensorid
+        self.sensorid = int(sensorid.replace(':', ''), 16)
+        print("{:012x}".format(self.sensorid), file=sys.stderr)
         self.timestamp = timestamp
         self.gas = gas
         self.dust = dust
