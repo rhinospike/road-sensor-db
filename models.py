@@ -29,7 +29,7 @@ class SensorReading(db.Model):
 
     def tojson(self):
         return {
-            "sensorid": self.sensorid,
+            "sensorid": "{:012x}".format(self.sensorid),
             "timestamp": str(self.timestamp),
             "sensors": {
                 "gas": self.gas,
