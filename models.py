@@ -1,15 +1,50 @@
 import sys
-from flask.ext.sqlalchemy import SQLAlchemy
 from flask import json
+from flask.ext.sqlalchemy import SQLAlchemy
+from sqlalchemy import ForeignKey
+from sqlalchemy.orm import relationship
 from sqlalchemy.dialects.postgresql import JSON
 from sqlalchemy import CheckConstraint
 
 db = SQLAlchemy()
 
-class SensorReading(db.Model):
+SENSOR_ID = "sensorid"
+TIMESTAMP = "timestamp"
+SENSORS = "sensors"
+SENSOR_TYPE = "sensor"
+SENSOR_VALUE = "value"
+LONGITUDE = "longitude"
+LATITUDE = "latitude"
+
+class Sensor(db.Model):
     __tablename__ = "sensors"
 
     sensorid = db.Column(db.BigInteger, primary_key=True)
+    latitude = db.Column(db.Float)
+    longitude = db.Column(db.Float)
+
+    def fromjson(json):
+        return Sensor(json[SENSOR_ID], json.get(LATITUDE), json.get(LONGITUDE))
+
+    def tojson(self):
+        return {
+            "sensorid" : self.sensorid,
+            "latitude" : self.latitude,
+            "longitude" : self.longitude
+        }
+
+    def __init__(self, sensorid, latitude, longitude):
+        self.sensorid = sensorid
+        self.latitude = latitude
+        self.longitude = longitude
+
+    def __repr__(self):
+        return str(self.sensorid)
+
+class SensorReading(db.Model):
+    __tablename__ = "readings"
+
+    sensorid = db.Column(db.BigInteger, ForeignKey('sensors.sensorid'), primary_key=True)
     timestamp = db.Column(db.DateTime, primary_key=True)
     gas = db.Column(db.Float)
     dust = db.Column(db.Float)
@@ -20,16 +55,24 @@ class SensorReading(db.Model):
         )
 
     def __init__(self, sensorid, timestamp, gas=None, dust=None, noise=None):
-        self.sensorid = int(sensorid.replace(':', ''), 16)
-        print("{:012x}".format(self.sensorid), file=sys.stderr)
+        self.sensorid = sensorid
         self.timestamp = timestamp
         self.gas = gas
         self.dust = dust
         self.noise = noise
 
+    def fromjson(data):
+        readings = data[SENSORS]
+        return SensorReading(
+                data[SENSOR_ID],
+                data[TIMESTAMP],
+                readings.get("gas"),
+                readings.get("dust"),
+                readings.get("noise"))
+
     def tojson(self):
         return {
-            "sensorid": "{:012x}".format(self.sensorid),
+            "sensorid": self.sensorid,
             "timestamp": str(self.timestamp),
             "sensors": {
                 "gas": self.gas,

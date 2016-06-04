@@ -14,12 +14,6 @@ app.app_context().push()
 db.init_app(app)
 db.create_all()
 
-SENSOR_ID = "sensorid"
-TIMESTAMP = "timestamp"
-SENSORS = "sensors"
-SENSOR_TYPE = "sensor"
-SENSOR_VALUE = "value"
-
 @app.route("/")
 def hello():
     return "Welcome to the road sensor network database."
@@ -34,8 +28,48 @@ def dumper(obj):
     except:
         return obj.__dict__
 
-@app.route("/retrieve")
-def retrieve():
+@app.route("/sensors")
+def getsensors():
+    query = db.session.query(Sensor)
+
+    sensorid = request.args.get("sensorid")
+
+    if sensorid:
+        sensorid = int(sensorid.replace(':',''), 16)
+        query = query.filter(Sensor.sensorid == sensorid)
+
+    result = query.all()
+
+    return json.dumps(result, default=dumper)
+
+@app.route("/sensors", methods = ['POST'])
+def register():
+    if request.headers['Content-Type'] == 'application/json':
+
+        newsensor = Sensor.fromjson(request.get_json())
+
+        existing = db.session.query(Sensor).filter(Sensor.sensorid == newsensor.sensorid).first()
+        if existing:
+            existing.latitude = newsensor.latitude
+            existing.longitude = newsensor.longitude
+        else:
+            db.session.add(newsensor)
+
+        try:
+            db.session.commit()
+            return str(newsensor)
+
+        except exc.IntegrityError as e:
+            reason = str(e)
+
+        if reason.find('violates unique constraint') != -1:
+            return "Primary key already exists", 422
+    else:
+        return "Unsupported Media Type", 415
+
+@app.route("/readings")
+def getreadings():
+    print('get readings', file=sys.stderr)
     sensorid = request.args.get("sensorid")
     if (sensorid != None):
         sensorid = int(sensorid.replace(':',''), 16)
@@ -61,20 +95,22 @@ def validate(json):
             return True
     return False
 
-@app.route("/insert", methods = ['POST'])
-def insert():
+@app.route("/readings", methods = ['POST'])
+def insertreadings():
+    print('inserting:', file=sys.stderr)
+
     if request.headers['Content-Type'] == 'application/json':
-        parsed = request.get_json()
 
-        sensorid = parsed[SENSOR_ID];
-        timestamp = parsed[TIMESTAMP];
-        readings = parsed[SENSORS];
+        for jsonsr in request.get_json():
 
-        result = "Sensor readings received from sensor {0} @ {1}:".format(sensorid, timestamp)
-        print(result, file=sys.stderr)
+            sr = SensorReading.fromjson(jsonsr)
 
-        sr = SensorReading(sensorid, timestamp, readings.get("gas"), readings.get("dust"), readings.get("noise"))
-        db.session.add(sr)
+            result = "Sensor readings received from sensor {0} @ {1}:".format(sr.sensorid, sr.timestamp)
+            print(result, file=sys.stderr)
+
+            db.session.add(sr)
+
+            print(sr.dust, file=sys.stderr)
 
         try:
             db.session.commit()
