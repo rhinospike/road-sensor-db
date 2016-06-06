@@ -107,8 +107,10 @@ def insertreadings():
             if q.first() == None:
                 # Add new sensor with unknown coordinates
                 newsensor = Sensor(sr.sensorid, 0, 0)
-                db.session.add(newsensor)
                 print('Adding new sensor {0!s}'.format(newsensor), file=sys.stderr)
+                db.session.add(newsensor)
+                db.session.commit()
+                print('Sensor {0!s} added'.format(newsensor), file=sys.stderr)
 
             db.session.add(sr)
 
