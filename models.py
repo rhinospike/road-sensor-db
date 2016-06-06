@@ -16,6 +16,14 @@ SENSOR_VALUE = "value"
 LONGITUDE = "longitude"
 LATITUDE = "latitude"
 
+def MACToInt(macstring):
+    return int(macstring.replace(':',''), 16)
+
+def intToMAC(val):
+    full = '%012x' % (val)
+    pieces = [full[i:i+2] for i in range(0, 12, 2)]
+    return ':'.join(pieces).upper()
+
 class Sensor(db.Model):
     __tablename__ = "sensors"
 
@@ -24,11 +32,13 @@ class Sensor(db.Model):
     longitude = db.Column(db.Float)
 
     def fromjson(json):
-        return Sensor(json[SENSOR_ID], json.get(LATITUDE), json.get(LONGITUDE))
+        return Sensor(MACToInt(json[SENSOR_ID]),
+                json.get(LATITUDE),
+                json.get(LONGITUDE))
 
     def tojson(self):
         return {
-            "sensorid" : self.sensorid,
+            "sensorid" : intToMAC(self.sensorid),
             "latitude" : self.latitude,
             "longitude" : self.longitude
         }
@@ -64,7 +74,7 @@ class SensorReading(db.Model):
     def fromjson(data):
         readings = data[SENSORS]
         return SensorReading(
-                data[SENSOR_ID],
+                MACToInt(data[SENSOR_ID]),
                 data[TIMESTAMP],
                 readings.get("gas"),
                 readings.get("dust"),
@@ -72,7 +82,7 @@ class SensorReading(db.Model):
 
     def tojson(self):
         return {
-            "sensorid": self.sensorid,
+            "sensorid": intToMAC(self.sensorid),
             "timestamp": str(self.timestamp),
             "sensors": {
                 "gas": self.gas,

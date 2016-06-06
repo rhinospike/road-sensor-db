@@ -89,12 +89,6 @@ def getreadings():
 
     return json.dumps(result, default=dumper)
 
-def validate(json):
-    if SENSOR_ID in json and TIMESTAMP in json and SENSORS in json:
-        if len(json[SENSORS]) > 0:
-            return True
-    return False
-
 @app.route("/readings", methods = ['POST'])
 def insertreadings():
     print('inserting:', file=sys.stderr)
@@ -107,6 +101,14 @@ def insertreadings():
 
             result = "Sensor readings received from sensor {0} @ {1}:".format(sr.sensorid, sr.timestamp)
             print(result, file=sys.stderr)
+
+            # Check if sensor is in database
+            q = db.session.query(Sensor).filter(Sensor.sensorid == sr.sensorid)
+            if q.first() == None:
+                # Add new sensor with unknown coordinates
+                newsensor = Sensor(sr.sensorid, 0, 0)
+                db.session.add(newsensor)
+                print('Adding new sensor {0!s}'.format(newsensor), file=sys.stderr)
 
             db.session.add(sr)
 
@@ -130,5 +132,5 @@ def insertreadings():
         return "Unsupported Media Type", 415
 
 if __name__ == "__main__":
-#    app.debug = True
+    #app.debug = True
     app.run(host='0.0.0.0', port=int(os.environ['PORT']))
