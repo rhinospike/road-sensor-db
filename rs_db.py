@@ -5,6 +5,7 @@ import datetime
 from flask import Flask, request, json, abort, redirect, url_for, render_template
 from sqlalchemy import exc, bindparam
 from sqlalchemy.ext import baked
+from sqlalchemy import desc 
 from models import *
 
 app = Flask(__name__)
@@ -85,7 +86,7 @@ def getreadings():
     if endtime:
         query = query.filter(SensorReading.timestamp <= endtime)
 
-    result = query.all()
+    result = query.order_by(desc(SensorReading.timestamp)).all()
 
     return json.dumps(result, default=dumper)
 
